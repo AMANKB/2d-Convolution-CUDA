@@ -14,7 +14,7 @@
 #define HB (HA - HC + 1)
 
 
-__global__ void Convolution(float* A, float* B, float* C, int numARows, int numACols, int numBRows, int numBCols, int numCRows, int numCCols)
+__global__ void Convolution2(float* A, float* B, float* C, int numARows, int numACols, int numBRows, int numBCols, int numCRows, int numCCols)
 {
 	int col = blockIdx.x * (BLOCK_SIZE - WC + 1) + threadIdx.x;
 	int row = blockIdx.y * (BLOCK_SIZE - WC + 1) + threadIdx.y;
