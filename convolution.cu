@@ -46,6 +46,49 @@ __global__ void Conv2DKernel(float* A, float* B, float* C, int numARows, int num
 }
 
 
+__global__ void max_pool_kernel(int channels, int image_height, int image_width, int pool_height, int pool_width,
+		double *global_pointer, double *output_pointer)
+{
+	__shared__ double shared_pointer[2704];
+	int pad_width = pool_width/2;
+	int pad_height = pool_height/2;
+	int block_x_index = blockDim.x*blockIdx.x;
+	int block_y_index = blockDim.y*blockIdx.y;
+
+	int global_offset = blockIdx.z*image_width*image_height;
+	int global_x_index;
+	int global_y_index;
+
+	int i = -1*pad_height;
+	int j = -1*pad_width;
+	int shared_mem_index = 0;
+	for(int i = threadIdx.y; i < blockDim.y + 2*pad_height; i = i + blockDim.y){
+		for(int j = threadIdx.x; j < blockDim.x + 2*pad_width; j = j + blockDim.x){
+			int shared_mem_index = i*(blockDim.x+ 2*pad_width) + j;
+			global_y_index = block_y_index - pad_height;
+			global_x_index = block_x_index - pad_width;
+			if(global_x_index < 0 || global_x_index >= image_width || global_y_index < 0 || global_y_index >= image_height){
+				shared_pointer[shared_mem_index] = 0;
+			}else{
+				shared_pointer[shared_mem_index] = global_pointer[global_offset+ (global_y_index*WIDTH) + global_x_index];
+			}
+		}
+	}
+	__syncthreads();
+	double max_value = 0.0;
+	for(int i = 0; i < pool_height; i++){
+		for(int j = 0; j < pool_width; j++){
+			int loc_index = (i+threadIdx.y)*(blockDim.x + 2*pad_width) + (j+threadIdx.x);
+			if(shared_pointer[loc_index] > max_value){
+				max_value = shared_pointer[loc_index];
+			}
+		}
+	}
+	global_y_index = block_y_index + threadIdx.y;
+	global_x_index = block_x_index + threadIdx.x;
+	output_pointer[global_offset+ (global_y_index*WIDTH) + global_x_index] = max_value;
+}
+
 void randomInit(float* data, int size)
 {
 	for (int i = 0; i < size; ++i)
