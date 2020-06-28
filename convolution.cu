@@ -46,7 +46,7 @@ __global__ void Conv2DKernel(float* A, float* B, float* C, int numARows, int num
 }
 
 
-__global__ void max_pool_kernel(int channels, int image_height, int image_width, int pool_height, int pool_width,
+__global__ void MaxPoolKernel(int channels, int image_height, int image_width, int pool_height, int pool_width,
 		double *global_pointer, double *output_pointer)
 {
 	__shared__ double shared_pointer[2704];
